@@ -104,6 +104,7 @@ class SideMenuState extends ConsumerState<SideMenu> {
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: CustomFilledButton(
               onPressed: () {
+                ref.invalidate(userImageProvider);
                 ref.read(authProvider.notifier).logout(null);
               },
               text: 'Cerrar sesión'),

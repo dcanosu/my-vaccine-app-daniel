@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:formz/formz.dart';
 import 'package:intl/intl.dart';
 import 'package:my_vaccine_app/features/auth/domain/entities/register_user_request/register_user_request.dart';
@@ -115,19 +115,43 @@ class RegistrationFormNotifier extends StateNotifier<RegistrationFormState> {
     );
   }
 
-  void onFormSubmit() async {
+  // void onFormSubmit() async {
+  //   _touchEveryField();
+  //   if (!state.isValid) return;
+
+  //   final registerUserRequest = RegisterUserRequest(
+  //     username: state.email.value,
+  //     password: state.password.value,
+  //     firstName: state.firstName.value,
+  //     lastName: state.lastName.value,
+  //     birthdate: DateTime.parse(state.birthdate.value),
+  //   );
+
+  //   await registerUserCallback(registerUserRequest);
+  // }
+
+  Future<bool> onFormSubmit() async {
     _touchEveryField();
-    if (!state.isValid) return;
+    if (!state.isValid) return false;
 
-    final registerUserRequest = RegisterUserRequest(
-      username: state.email.value,
-      password: state.password.value,
-      firstName: state.firstName.value,
-      lastName: state.lastName.value,
-      birthdate: DateTime.parse(state.birthdate.value),
-    );
+    state = state.copyWith(isPosting: true);
 
-    await registerUserCallback(registerUserRequest);
+    try {
+      final registerUserRequest = RegisterUserRequest(
+        username: state.email.value,
+        password: state.password.value,
+        firstName: state.firstName.value,
+        lastName: state.lastName.value,
+        birthdate: DateTime.parse(state.birthdate.value),
+      );
+
+      await registerUserCallback(registerUserRequest);
+      state = state.copyWith(isPosting: false);
+      return true;
+    } catch (e) {
+      state = state.copyWith(isPosting: false);
+      return false;
+    }
   }
 
   void _touchEveryField() {
@@ -161,6 +185,7 @@ class RegistrationFormState {
   final Birthdate birthdate;
   final bool isValid;
   final bool isFormPosted;
+  final bool isPosting;
 
   RegistrationFormState({
     this.firstName = const FirstName.pure(),
@@ -171,6 +196,7 @@ class RegistrationFormState {
     this.birthdate = const Birthdate.pure(),
     this.isValid = false,
     this.isFormPosted = false,
+    this.isPosting = false,
   });
 
   RegistrationFormState copyWith({
@@ -182,6 +208,7 @@ class RegistrationFormState {
     Birthdate? birthdate,
     bool? isValid,
     bool? isFormPosted,
+    bool? isPosting,
   }) {
     return RegistrationFormState(
       firstName: firstName ?? this.firstName,

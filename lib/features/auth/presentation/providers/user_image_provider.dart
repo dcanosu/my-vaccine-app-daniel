@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:my_vaccine_app/config/constants/environment.dart';

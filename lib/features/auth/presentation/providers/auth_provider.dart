@@ -1,13 +1,13 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import 'package:my_vaccine_app/features/auth/domain/entities/register_user_request/register_user_request.dart';
-import 'package:my_vaccine_app/features/auth/domain/entities/user.dart';
 import 'package:my_vaccine_app/features/auth/domain/entities/user_info/user_info.dart';
 import 'package:my_vaccine_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:my_vaccine_app/features/auth/infrastructure/errors/auth_errors.dart';
 import 'package:my_vaccine_app/features/auth/infrastructure/repositories/auth_repository_impl.dart';
 import 'package:my_vaccine_app/features/shared/infrastructure/services/key_value_storage_service.dart';
 import 'package:my_vaccine_app/features/shared/infrastructure/services/key_value_storage_service_impl.dart';
+import 'package:my_vaccine_app/features/auth/presentation/providers/user_image_provider.dart';
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final authRepository = AuthRepositoryImpl();
@@ -15,16 +15,19 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 
   return AuthNotifier(
       authRepository: authRepository,
-      keyValueStorageService: keyValueStorageService);
+      keyValueStorageService: keyValueStorageService,
+      onLogout: () => ref.invalidate(userImageProvider));
 });
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository authRepository;
   final KeyValueStorageService keyValueStorageService;
+  final VoidCallback? onLogout;
 
   AuthNotifier({
     required this.authRepository,
     required this.keyValueStorageService,
+    this.onLogout,
   }) : super(AuthState()) {
     checkAuthStatus();
   }
@@ -50,11 +53,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // state =state.copyWith(user: user, authStatus: AuthStatus.authenticated)
   }
 
-  Future registerUser(RegisterUserRequest registerUserRequest) async {
-    try {
-      final user = await authRepository.register(registerUserRequest);
-      _setLoggedUser(user);
-    } catch (e) {}
+  // Future registerUser(RegisterUserRequest registerUserRequest) async {
+  //   try {
+  //     final user = await authRepository.register(registerUserRequest);
+  //     _setLoggedUser(user);
+  //   } catch (e) {}
+  // }
+
+  Future<void> registerUser(RegisterUserRequest registerUserRequest) async {
+    await authRepository.register(registerUserRequest);
   }
 
   void checkAuthStatus() async {
@@ -102,11 +109,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> logout([String? errorMessage]) async {
     await keyValueStorageService.removeKey('token');
+    await keyValueStorageService.removeKey('userInfo');
+    onLogout?.call();
 
-    state = state.copyWith(
-        authStatus: AuthStatus.notAuthenticated,
-        user: null,
-        errorMessage: errorMessage);
+    state = AuthState(
+      authStatus: AuthStatus.notAuthenticated,
+      user: null,
+      token: null,
+      userPhotoProfile: null,
+      errorMessage: errorMessage ?? '',
+    );
   }
 }
 
